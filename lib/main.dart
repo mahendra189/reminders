@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remainders/widgets/item.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:uuid/uuid.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,6 +44,16 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class Remainder {
+  late String id;
+  String title;
+  bool completed;
+
+  Remainder({required this.title})
+      : id = Uuid().v4(),
+        completed = false;
+}
+
 class Remainders extends StatefulWidget {
   const Remainders({super.key});
 
@@ -51,17 +62,17 @@ class Remainders extends StatefulWidget {
 }
 
 class _RemaindersState extends State<Remainders> {
-  List<String> remainders = [
-    "Grocery shopping for the week",
-    "Finish the report for work",
-    "Call Mom to check in",
-    "Exercise for at least 30 minutes",
-    "Read 20 pages of a new book",
-    "Schedule a dentist appointment",
-    "Clean and organize the workspace",
-    "Plan next week's meals",
-    "Watch the latest episode of my favorite show",
-    "Meditate for 10 minutes",
+  List<Remainder> remainders = [
+    Remainder(title: "Grocery shopping for the week"),
+    Remainder(title: "Finish the report for work"),
+    Remainder(title: "Call Mom to check in"),
+    Remainder(title: "Exercise for at least 30 minutes"),
+    Remainder(title: "Read 20 pages of a new book"),
+    Remainder(title: "Schedule a dentist appointment"),
+    Remainder(title: "Clean and organize the workspace"),
+    Remainder(title: "Plan next week's meals"),
+    Remainder(title: "Watch the latest episode of my favorite show"),
+    Remainder(title: "Meditate for 10 minutes"),
   ];
 
   final TextEditingController _title = TextEditingController();
@@ -104,13 +115,23 @@ class _RemaindersState extends State<Remainders> {
 
   void addToDo(String value) {
     setState(() {
-      remainders.add(value);
+      remainders.add(Remainder(title: value));
     });
   }
 
-  void deleteToDo(String value) {
+  void deleteToDo(Remainder re) {
     setState(() {
-      remainders.remove(value);
+      remainders.remove(re);
+    });
+  }
+
+  void toggleToDo(String id) {
+    setState(() {
+      for (var remainder in remainders) {
+        if (remainder.id == id) {
+          remainder.completed = !remainder.completed;
+        }
+      }
     });
   }
 
@@ -138,11 +159,11 @@ class _RemaindersState extends State<Remainders> {
                   children: remainders
                       .where((e) =>
                           _searched.text.isEmpty ||
-                          e
+                          e.title
                               .toLowerCase()
                               .contains(_searched.text.toLowerCase()))
                       .map((e) => Dismissible(
-                            key: Key(e),
+                            key: Key(e.id),
                             background: Container(
                               decoration: BoxDecoration(
                                   color: const Color(0xFFFF382B),
@@ -159,16 +180,9 @@ class _RemaindersState extends State<Remainders> {
                             ),
                             direction: DismissDirection.endToStart,
                             onDismissed: (direction) {
-                              // Remove the item from the data source
                               deleteToDo(e);
-                              // Show a snackbar to confirm deletion
-                              // ScaffoldMessenger.of(context).showSnackBar(
-                              //   SnackBar(
-                              //     content: Text("${remainders[index]} deleted"),
-                              //   ),
-                              // );
                             },
-                            child: Item(title: e),
+                            child: Item(remainder: e, toggle: toggleToDo),
                           ))
                       .toList(),
                 ),
