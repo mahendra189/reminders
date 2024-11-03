@@ -1,125 +1,362 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:remainders/widgets/item.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
+// Themes
+ThemeData light = ThemeData(
+    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+    hintColor: const Color(0xFF0C79FE),
+    highlightColor: Colors.white,
+    primaryColor: const Color(0xFFE2E2E7),
+    secondaryHeaderColor: const Color(0xFF808080),
+    scaffoldBackgroundColor: const Color(0xFFF2F2F7),
+    useMaterial3: true,
+    focusColor: Colors.black);
+ThemeData dark = ThemeData(
+    textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+    hintColor: const Color(0xFF0C79FE),
+    secondaryHeaderColor: const Color(0xFF808083),
+    primaryColor: const Color(0xFF1B1B1C),
+    scaffoldBackgroundColor: Colors.black,
+    useMaterial3: true,
+    focusColor: Colors.white);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  final ThemeMode _theme = ThemeMode.system;
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Remainders',
+      theme: light,
+      darkTheme: dark,
+      themeMode: _theme,
+      home: const Remainders(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class Remainders extends StatefulWidget {
+  const Remainders({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<Remainders> createState() => _RemaindersState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _RemaindersState extends State<Remainders> {
+  List<String> remainders = [
+    "Grocery shopping for the week",
+    "Finish the report for work",
+    "Call Mom to check in",
+    "Exercise for at least 30 minutes",
+    "Read 20 pages of a new book",
+    "Schedule a dentist appointment",
+    "Clean and organize the workspace",
+    "Plan next week's meals",
+    "Watch the latest episode of my favorite show",
+    "Meditate for 10 minutes",
+  ];
 
-  void _incrementCounter() {
+  final TextEditingController _title = TextEditingController();
+  final TextEditingController _searched = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  @override
+  void initState() {
+    super.initState();
+    _searched.addListener(
+      () {
+        setState(() {});
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _searched.dispose();
+    _searchFocusNode.unfocus();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Set the status bar and navigation bar colors based on the current theme
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Theme.of(context).scaffoldBackgroundColor,
+      statusBarIconBrightness: Theme.of(context).brightness == Brightness.light
+          ? Brightness.dark // For light theme, use dark icons
+          : Brightness.light, // For dark theme, use light icons
+      systemNavigationBarColor:
+          Theme.of(context).scaffoldBackgroundColor, // Navigation bar color
+      systemNavigationBarIconBrightness:
+          Theme.of(context).brightness == Brightness.light
+              ? Brightness.dark // Dark icons for light theme
+              : Brightness.light, // Light icons for dark theme
+    ));
+  }
+
+  void addToDo(String value) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      remainders.add(value);
+    });
+  }
+
+  void deleteToDo(String value) {
+    setState(() {
+      remainders.remove(value);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 40,
+              ),
+              searchBar(),
+              const SizedBox(
+                height: 5,
+              ),
+              Expanded(
+                child: ListView(
+                  children: remainders
+                      .where((e) =>
+                          _searched.text.isEmpty ||
+                          e
+                              .toLowerCase()
+                              .contains(_searched.text.toLowerCase()))
+                      .map((e) => Dismissible(
+                            key: Key(e),
+                            background: Container(
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFFF382B),
+                                  borderRadius: BorderRadius.circular(10)),
+                              // Background color when swiping
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                child: Icon(
+                                  CupertinoIcons.delete_solid,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (direction) {
+                              // Remove the item from the data source
+                              deleteToDo(e);
+                              // Show a snackbar to confirm deletion
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   SnackBar(
+                              //     content: Text("${remainders[index]} deleted"),
+                              //   ),
+                              // );
+                            },
+                            child: Item(title: e),
+                          ))
+                      .toList(),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                      context: context,
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height *
+                            0.9, // Set max height to 90% of screen height
+                      ),
+                      isDismissible: true,
+                      enableDrag: true,
+                      elevation: 30,
+                      builder: (BuildContext context) => bottomSheet());
+                },
+                child: Row(
+                  children: [
+                    const SizedBox(width: 10),
+                    Icon(
+                      Icons.add_circle_rounded,
+                      size: 30,
+                      color: Theme.of(context).hintColor,
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Text(
+                      "To-do",
+                      style: TextStyle(
+                          color: Theme.of(context).hintColor, fontSize: 18),
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  // bottomsheet
+  Widget bottomSheet() {
+    final FocusNode _focusNode = FocusNode();
+    return StatefulBuilder(builder: (BuildContext context, StateSetter setter) {
+      return Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+          width: double.infinity,
+          child: Column(children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    FocusScope.of(context).unfocus();
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: Theme.of(context).hintColor),
+                  ),
+                ),
+                const Text("New To-Do"),
+                GestureDetector(
+                  onTap: () {
+                    if (_title.text.isNotEmpty) {
+                      addToDo(_title.text);
+                      _title.text = '';
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text(
+                    "Add",
+                    style: TextStyle(
+                        color: _title.text.isNotEmpty
+                            ? Theme.of(context).hintColor
+                            : Theme.of(context).highlightColor),
+                  ),
+                )
+              ],
+            ),
+            const SizedBox(
+              height: 25,
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .highlightColor, // Light background color
+                  borderRadius:
+                      BorderRadius.circular(12), // More rounded corners
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(
+                          0, 2), // Subtle shadow to mimic iOS style
+                    ),
+                  ],
+                  border: _focusNode.hasFocus
+                      ? Border.all(color: Theme.of(context).hintColor, width: 3)
+                      : Border.all(color: Colors.transparent, width: 3)),
+              child: TextField(
+                focusNode: _focusNode,
+                cursorColor: Theme.of(context).hintColor,
+                cursorWidth: 2,
+                controller: _title,
+                onSubmitted: (String value) {
+                  addToDo(value);
+                  _title.clear();
+                },
+
+                style: TextStyle(
+                  color: Theme.of(context).focusColor, // Dark text color
+                  fontSize: 16,
+                ),
+                maxLines:
+                    null, // Allows the TextField to expand vertically as needed
+                keyboardType: TextInputType.multiline,
+                decoration: InputDecoration(
+                  hintText: "Title",
+                  border: InputBorder.none, // No visible border
+                  hintStyle: TextStyle(
+                    color: Colors.grey[500], // Softer hint color
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                onChanged: (String value) {
+                  setter(() {}); // Rebuilds bottomSheet to update color
+                },
+              ),
+            )
+          ]));
+    });
+  }
+
+  Widget searchBar() {
+    return Container(
+      height: 40,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+      child: Row(
+        children: [
+          Icon(
+            Icons.search,
+            color: Theme.of(context).secondaryHeaderColor,
+            size: 30,
+          ),
+          const SizedBox(
+            width: 7,
+          ),
+          Expanded(
+            flex: 1,
+            child: TextField(
+              focusNode: _searchFocusNode,
+              autofocus: false,
+              controller: _searched,
+              style: TextStyle(
+                color: Theme.of(context).secondaryHeaderColor,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                hintStyle: TextStyle(
+                  color: Theme.of(context).secondaryHeaderColor,
+                  fontSize: 14,
+                ),
+                hintText: 'Search',
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
