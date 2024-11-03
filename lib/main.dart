@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:remainders/storage.dart';
 import 'package:remainders/widgets/item.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
@@ -49,9 +50,16 @@ class Remainder {
   String title;
   bool completed;
 
-  Remainder({required this.title})
-      : id = Uuid().v4(),
-        completed = false;
+  Remainder({required this.title, this.completed = false})
+      : id = const Uuid().v4();
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'title': title, 'completed': completed};
+  }
+
+  factory Remainder.fromJson(Map<String, dynamic> json) {
+    return Remainder(title: json['title'], completed: json['completed']);
+  }
 }
 
 class Remainders extends StatefulWidget {
@@ -74,10 +82,11 @@ class _RemaindersState extends State<Remainders> {
     Remainder(title: "Watch the latest episode of my favorite show"),
     Remainder(title: "Meditate for 10 minutes"),
   ];
-
+  final RemainderStorage _storage = RemainderStorage();
   final TextEditingController _title = TextEditingController();
   final TextEditingController _searched = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +95,14 @@ class _RemaindersState extends State<Remainders> {
         setState(() {});
       },
     );
+    _loadRemainders();
+  }
+
+  Future<void> _loadRemainders() async {
+    List<Remainder> loadedRemainders = await _storage.loadReminders();
+    setState(() {
+      remainders = loadedRemainders;
+    });
   }
 
   @override
@@ -117,12 +134,14 @@ class _RemaindersState extends State<Remainders> {
     setState(() {
       remainders.add(Remainder(title: value));
     });
+    _storage.saveReminders(remainders);
   }
 
   void deleteToDo(Remainder re) {
     setState(() {
       remainders.remove(re);
     });
+    _storage.saveReminders(remainders);
   }
 
   void toggleToDo(String id) {
@@ -133,6 +152,7 @@ class _RemaindersState extends State<Remainders> {
         }
       }
     });
+    _storage.saveReminders(remainders);
   }
 
   @override
@@ -155,37 +175,44 @@ class _RemaindersState extends State<Remainders> {
                 height: 5,
               ),
               Expanded(
-                child: ListView(
-                  children: remainders
-                      .where((e) =>
-                          _searched.text.isEmpty ||
-                          e.title
-                              .toLowerCase()
-                              .contains(_searched.text.toLowerCase()))
-                      .map((e) => Dismissible(
-                            key: Key(e.id),
-                            background: Container(
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFFFF382B),
-                                  borderRadius: BorderRadius.circular(10)),
-                              // Background color when swiping
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: Icon(
-                                  CupertinoIcons.delete_solid,
-                                  color: Colors.white,
+                child: remainders.isNotEmpty
+                    ? ListView(
+                        children: remainders
+                            .where((e) =>
+                                _searched.text.isEmpty ||
+                                e.title
+                                    .toLowerCase()
+                                    .contains(_searched.text.toLowerCase()))
+                            .map(
+                              (e) => Dismissible(
+                                key: Key(e.id),
+                                background: Container(
+                                  decoration: BoxDecoration(
+                                      color: const Color(0xFFFF382B),
+                                      borderRadius: BorderRadius.circular(10)),
+                                  // Background color when swiping
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 20),
+                                    child: Icon(
+                                      CupertinoIcons.delete_solid,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
+                                direction: DismissDirection.endToStart,
+                                onDismissed: (direction) {
+                                  deleteToDo(e);
+                                },
+                                child: Item(remainder: e, toggle: toggleToDo),
                               ),
-                            ),
-                            direction: DismissDirection.endToStart,
-                            onDismissed: (direction) {
-                              deleteToDo(e);
-                            },
-                            child: Item(remainder: e, toggle: toggleToDo),
-                          ))
-                      .toList(),
-                ),
+                            )
+                            .toList(),
+                      )
+                    : const Center(
+                        child: Text("No To-Do"),
+                      ),
               ),
               const SizedBox(
                 height: 10,
@@ -231,16 +258,17 @@ class _RemaindersState extends State<Remainders> {
 
   // bottomsheet
   Widget bottomSheet() {
-    final FocusNode _focusNode = FocusNode();
+    final FocusNode focusNode = FocusNode();
     return StatefulBuilder(builder: (BuildContext context, StateSetter setter) {
       return Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-          width: double.infinity,
-          child: Column(children: [
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        width: double.infinity,
+        child: Column(
+          children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -292,11 +320,11 @@ class _RemaindersState extends State<Remainders> {
                           0, 2), // Subtle shadow to mimic iOS style
                     ),
                   ],
-                  border: _focusNode.hasFocus
+                  border: focusNode.hasFocus
                       ? Border.all(color: Theme.of(context).hintColor, width: 3)
                       : Border.all(color: Colors.transparent, width: 3)),
               child: TextField(
-                focusNode: _focusNode,
+                focusNode: focusNode,
                 cursorColor: Theme.of(context).hintColor,
                 cursorWidth: 2,
                 controller: _title,
@@ -325,7 +353,9 @@ class _RemaindersState extends State<Remainders> {
                 },
               ),
             )
-          ]));
+          ],
+        ),
+      );
     });
   }
 
