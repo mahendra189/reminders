@@ -70,18 +70,7 @@ class Remainders extends StatefulWidget {
 }
 
 class _RemaindersState extends State<Remainders> {
-  List<Remainder> remainders = [
-    Remainder(title: "Grocery shopping for the week"),
-    Remainder(title: "Finish the report for work"),
-    Remainder(title: "Call Mom to check in"),
-    Remainder(title: "Exercise for at least 30 minutes"),
-    Remainder(title: "Read 20 pages of a new book"),
-    Remainder(title: "Schedule a dentist appointment"),
-    Remainder(title: "Clean and organize the workspace"),
-    Remainder(title: "Plan next week's meals"),
-    Remainder(title: "Watch the latest episode of my favorite show"),
-    Remainder(title: "Meditate for 10 minutes"),
-  ];
+  List<Remainder> remainders = [];
   final RemainderStorage _storage = RemainderStorage();
   final TextEditingController _title = TextEditingController();
   final TextEditingController _searched = TextEditingController();
